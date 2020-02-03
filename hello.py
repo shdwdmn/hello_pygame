@@ -44,15 +44,6 @@ def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
         pygame.draw.arc(screen, color2, [(_x - 25, _y + 27), (50, 35)], 0, pi, 4)  # arc reverse =(
 
 
-def wait_for_quit():
-    _terminated = False
-    while not _terminated:
-        pygame.time.delay(200)
-        for _event in pygame.event.get():
-            if _event.type == pygame.QUIT:
-                _terminated = True
-
-
 terminated = False
 trigger = 0
 x = start_x
@@ -105,20 +96,24 @@ while not terminated and trigger < 2 and countdown > 0:
     pygame.display.update()
 
 if terminated:
-    pass
-else:
-    screen.fill(black_color)
-    font = pygame.font.Font('impact.ttf', 64)
-    textRect.center = (220, 250)
-    if countdown > 0:
-        text = font.render('You WIN!', True, pig_color, background_color)
-        draw_pig(start_x, start_y - step*2)
-        pygame.draw.circle(screen, gold_color, (start_x, start_y - step*2), 50, 4)
-    else:
-        text = font.render('You LOSE!', True, background_color, black_color)
-        draw_pig(start_x, start_y, reverse=True)
-    screen.blit(text, textRect)
-    pygame.display.update()
-    wait_for_quit()
+    pygame.quit()
+    quit()
 
-pygame.quit()
+screen.fill(black_color)
+font = pygame.font.Font('impact.ttf', 64)
+textRect.center = (220, 250)
+if countdown > 0:
+    text = font.render('You WIN!', True, pig_color, background_color)
+    draw_pig(start_x, start_y - step*2)
+    pygame.draw.circle(screen, gold_color, (start_x, start_y - step*2), 50, 4)
+else:
+    text = font.render('You LOSE!', True, background_color, black_color)
+    draw_pig(start_x, start_y, reverse=True)
+screen.blit(text, textRect)
+pygame.display.update()
+
+while not terminated:
+    pygame.time.delay(200)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            terminated = True
