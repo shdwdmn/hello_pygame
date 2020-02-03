@@ -11,18 +11,9 @@ start_y = 400
 step = 150  # pig step
 pi = 3.141592653
 
-pygame.init()
-screen = pygame.display.set_mode((500, 500))
-pygame.display.set_caption("hello... pyg... ame... :=)")
 
-font = pygame.font.Font('impact.ttf', 32)
-font_help = pygame.font.Font('impact.ttf', 18)
-text = font.render('Countdown: ', True, background_color, black_color)
-textRect = text.get_rect()
-textRect.center = (100, 50)  # text position
-text_help = font_help.render('Play with arrows', True, black_color)
-helpRect = text_help.get_rect()
-helpRect.center = (70, 480)
+def set_font_size(size):
+    return pygame.font.Font('Titillium-Bold.otf', size)
 
 
 def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
@@ -42,6 +33,20 @@ def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
         pygame.draw.arc(screen, color2, [(_x - 25, _y + 27), (50, 35)], 0, pi, 4)  # arc reverse =(
 
 
+pygame.init()
+screen = pygame.display.set_mode((500, 500))
+pygame.display.set_caption("hello... pyg... ame... :=)")
+
+font = set_font_size(30)
+font_help = set_font_size(18)
+text = font.render('Countdown: ', True, background_color, black_color)
+textRect = text.get_rect()
+textRect.center = (100, 50)  # text position
+text_help = font_help.render('Play with arrows', True, black_color)
+helpRect = text_help.get_rect()
+helpRect.center = (80, 480)
+
+
 terminated = False
 trigger = 0
 x = start_x
@@ -51,7 +56,7 @@ while not terminated and trigger < 2 and countdown > 0:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  # 'close' button event
             terminated = True
-        elif event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:  # key down events
             if event.key == pygame.K_LEFT:
                 x -= step
                 trigger += 0.5
@@ -68,7 +73,7 @@ while not terminated and trigger < 2 and countdown > 0:
                 y -= step
                 trigger += 0.5
                 countdown -= 1
-        elif event.type == pygame.KEYUP:
+        elif event.type == pygame.KEYUP:  # key up events
             if event.key == pygame.K_LEFT:
                 x += step
                 trigger -= 0.5
@@ -98,7 +103,7 @@ if terminated:  # if window closed
     quit()
 
 screen.fill(black_color)  # game over screen
-font = pygame.font.Font('impact.ttf', 64)
+font = set_font_size(64)
 textRect.center = (220, 250)
 if countdown > 0:
     text = font.render('You WIN!', True, pig_color, background_color)
