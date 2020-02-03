@@ -1,5 +1,7 @@
 import pygame
 
+countdown = 50
+
 window_size = (500, 500)
 window_caption = "hello... pyg... ame... :=)"
 start_x = 250
@@ -9,7 +11,6 @@ pig_color = (255, 80, 80)
 background_color = (50, 50, 50)
 black_color = (0, 0, 0)
 gold_color = (255, 215, 0)
-countdown = 50
 pi = 3.141592653
 
 pygame.init()
