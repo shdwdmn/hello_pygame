@@ -2,7 +2,7 @@ import pygame
 
 countdown = 50  # adjustable
 
-font_path = 'Titillium-Bold.otf'
+font_path = 'fonts/Titillium-Bold.otf'
 pig_color = (255, 80, 80)
 background_color = (50, 50, 50)
 black_color = (0, 0, 0)
@@ -39,10 +39,10 @@ screen = pygame.display.set_mode((500, 500))
 pygame.display.set_caption("hello... pyg... ame... :=)")
 
 font = set_font_size(30)
-font_help = set_font_size(18)
 text = font.render('Countdown: ', True, background_color, black_color)
 textRect = text.get_rect()
 textRect.center = (100, 50)  # text position
+font_help = set_font_size(18)
 text_help = font_help.render('Play with arrows', True, black_color)
 helpRect = text_help.get_rect()
 helpRect.center = (80, 480)
