@@ -2,6 +2,7 @@ import pygame
 
 countdown = 50  # adjustable
 
+font_path = 'Titillium-Bold.otf'
 pig_color = (255, 80, 80)
 background_color = (50, 50, 50)
 black_color = (0, 0, 0)
@@ -13,7 +14,7 @@ pi = 3.141592653
 
 
 def set_font_size(size):
-    return pygame.font.Font('Titillium-Bold.otf', size)
+    return pygame.font.Font(font_path, size)
 
 
 def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
