@@ -9,7 +9,7 @@ pig_color = (255, 80, 80)
 background_color = (50, 50, 50)
 black_color = (0, 0, 0)
 gold_color = (255, 215, 0)
-tries = 50
+countdown = 50
 pi = 3.141592653
 
 pygame.init()
@@ -54,7 +54,6 @@ def wait_for_quit():
 
 terminated = False
 trigger = 0
-countdown = tries
 x = start_x
 y = start_y
 while not terminated and trigger < 2 and countdown > 0:
