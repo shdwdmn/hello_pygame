@@ -52,7 +52,7 @@ terminated = False
 trigger = 0
 x = start_x
 y = start_y
-while not terminated and trigger < 2 and countdown > 0:
+while not terminated and trigger < 2 and countdown > 0:  # main cycle
     pygame.time.delay(50)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  # 'close' button event
