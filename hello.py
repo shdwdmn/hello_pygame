@@ -17,9 +17,13 @@ screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption(window_caption)
 
 font = pygame.font.Font('impact.ttf', 32)
+font_help = pygame.font.Font('impact.ttf', 18)
 text = font.render('Countdown: ', True, background_color, black_color)
 textRect = text.get_rect()
 textRect.center = (100, 50)
+text_help = font_help.render('Play with arrows', True, black_color)
+helpRect = text_help.get_rect()
+helpRect.center = (70, 480)
 
 
 def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
@@ -42,7 +46,7 @@ def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
 def wait_for_quit():
     _terminated = False
     while not _terminated:
-        pygame.time.delay(50)
+        pygame.time.delay(200)
         for _event in pygame.event.get():
             if _event.type == pygame.QUIT:
                 _terminated = True
@@ -97,6 +101,7 @@ while not terminated and trigger < 2 and countdown > 0:
     draw_pig(x, y)
     pygame.draw.circle(screen, gold_color, (start_x, start_y - step*2), 48, 2)
     screen.blit(text, textRect)
+    screen.blit(text_help, helpRect)
     pygame.display.update()
 
 if terminated:
