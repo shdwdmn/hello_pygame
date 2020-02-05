@@ -37,6 +37,7 @@ def draw_pig(_x, _y, color1=pig_color, color2=black_color, reverse=False):
 pygame.init()
 screen = pygame.display.set_mode((500, 500))
 pygame.display.set_caption("hello... pyg... ame... :=)")
+clock = pygame.time.Clock()
 
 font = set_font_size(30)
 text = font.render('Countdown: ', True, background_color, black_color)
@@ -52,45 +53,46 @@ terminated = False
 trigger = 0
 x = start_x
 y = start_y
-while not terminated and trigger < 2 and countdown > 0:  # main cycle
-    pygame.time.delay(50)
+while not terminated and trigger < 4 and countdown > 0:  # main cycle
+    clock.tick(10)
     for event in pygame.event.get():
+        def trigger_add(sign):
+            global trigger
+            global countdown
+            if sign == '+':
+                trigger += 1
+            else:
+                trigger -= 1
+            countdown -= 1
+
         if event.type == pygame.QUIT:  # 'close' button event
             terminated = True
         elif event.type == pygame.KEYDOWN:  # key down events
             if event.key == pygame.K_LEFT:
                 x -= step
-                trigger += 0.5
-                countdown -= 1
+                trigger_add("+")
             elif event.key == pygame.K_RIGHT:
                 x += step
-                trigger += 0.5
-                countdown -= 1
+                trigger_add("+")
             elif event.key == pygame.K_DOWN:
                 y -= step
-                trigger += 0.5
-                countdown -= 1
+                trigger_add("+")
             elif event.key == pygame.K_UP:
                 y -= step
-                trigger += 0.5
-                countdown -= 1
+                trigger_add("+")
         elif event.type == pygame.KEYUP:  # key up events
             if event.key == pygame.K_LEFT:
                 x += step
-                trigger -= 0.5
-                countdown -= 1
+                trigger_add("-")
             elif event.key == pygame.K_RIGHT:
                 x -= step
-                trigger -= 0.5
-                countdown -= 1
+                trigger_add("-")
             elif event.key == pygame.K_DOWN:
                 y += step
-                trigger -= 0.5
-                countdown -= 1
+                trigger_add("-")
             elif event.key == pygame.K_UP:
                 y += step
-                trigger -= 0.5
-                countdown -= 1
+                trigger_add("-")
     text = font.render(f'Countdown: {countdown}', True, background_color, black_color)
     screen.fill(background_color)
     draw_pig(x, y)
