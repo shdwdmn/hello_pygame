@@ -72,6 +72,8 @@ class MainScreen:
         while not self.terminated:  # main cycle
             clock.tick(frame_rate)
 
+            self.main_elements()
+
             dice = self.dice
             dice.update()
 
@@ -83,8 +85,6 @@ class MainScreen:
             player3 = self.player3
             player4 = self.player4
 
-            self.main_elements()
-
             for event in pg.event.get():  # TODO: catch alt+f4 also
                 if event.type == pg.QUIT:  # 'close' button event
                     self.terminated = True
@@ -95,8 +95,11 @@ class MainScreen:
                 # print(coordinates)
             if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1] <= window_h:
                 dice.left_click()
-            if not pg.mouse.get_pressed()[0]:
-                dice.dice_wait = True
+            if text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1] <= window_h:
+                dice.wait()
+            # if not pg.mouse.get_pressed()[0]:  # runs constantly while mouse not pressed
+            #     dice.dice_wait = True
+            #     print('working')
 
             message.display('Первый раунд.')
             message.display('Бросайте свои кости!')
@@ -160,7 +163,7 @@ class Dice:
     def update(self):
         if self.dice_wait:
             self.sprite = throw_image
-            screen.blit(self.sprite, self.position)  # TODO: fix image displaying
+            screen.blit(self.sprite, self.position)
         else:
             if self.rolled_count < self.roll_frames:
                 self.number = random.randrange(5)
@@ -172,6 +175,10 @@ class Dice:
             #     self.blink = True
             # else:
             #     self.blink = False
+
+    def wait(self):
+        self.dice_wait = True
+        self.update()
 
     def throw(self):
         self.rolled_count = 0
