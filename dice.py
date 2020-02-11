@@ -4,7 +4,8 @@ from random import randrange
 
 window_w = 1600
 window_h = 900
-frame_rate = 10
+frame_rate = 8
+roll_frames = 15  # frames amount for dice animation
 bar_split = int(window_h / 5 * 4)
 text_split = int(window_w / 5 * 1)
 character_split = int(window_w / 5 * 4)
@@ -35,30 +36,23 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
-pg.display.set_caption("MAP")
+pg.display.set_caption('FISHECHKI')
 clock = pg.time.Clock()
+states_list = ('player select', 'first move', 'dice throw', 'dice wait', 'dice done')
 
 
 class MainScreen:
     def __init__(self):
-        # self.terminated = False
+        self.terminated = False
+        self.state = states_list[0]
+        self.dice = Dice()
+        self.board = Board()
+        self.message = Message()
         self.player1 = Player(1)
         self.player2 = Player(2)
         self.player3 = Player(3)
         self.player4 = Player(4)
-        # self.score = Score()
-        self.dice = Dice()
-        self.message = Message()
-
-    @staticmethod
-    def draw_text(text, size, position, color, background):
-        font = pg.font.Font(font_path, size)
-        text = font.render(text, True, color, background)
-        screen.blit(text, (position, (0, 0)))
-        text_rect = text.get_rect()
-        text_height = text_rect[3] - text_rect[1]
-        text_weight = text_rect[2] - text_rect[0]
-        return text_height, text_weight
+        self.current = self.player1
 
     @staticmethod
     def draw_main_elements():
@@ -69,51 +63,47 @@ class MainScreen:
         pg.draw.line(screen, black_color, (character_split, bar_split), (character_split, window_h), 4)
 
     def update(self):
-        # while not self.terminated:  # main cycle
-        while True:  # main cycle
-            clock.tick(frame_rate)
-
-            self.draw_main_elements()
-
+        while not self.terminated:  # main cycle
             dice = self.dice
-            dice.update()
-
             message = self.message
-            message.reset()
-
             player1 = self.player1
             player2 = self.player2
             player3 = self.player3
             player4 = self.player4
 
-            for event in pg.event.get():  # TODO: catch alt+f4 also
-                if event.type == pg.QUIT:  # 'close' button event
-                    # self.terminated = True
-                    return
+            clock.tick(frame_rate)
 
-            coordinates = (-1, -1)
-            if pg.mouse.get_pressed()[0]:  # 0 for left mouse button, 1 for mid, 2 for right
-                coordinates = pg.mouse.get_pos()
-                # print(coordinates)
-            if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1] <= window_h:
-                dice.left_click()
-            if text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1] <= window_h:
-                dice.wait()
-            # if not pg.mouse.get_pressed()[0]:  # runs constantly while mouse not pressed
-            #     dice.dice_wait = True
-            #     print('working')
-
-            message.display('Первый раунд.')
-            message.display('Бросайте свои кости!')
-            message.display('И будь что будет......... )')
-            # message.display('GAME OVER', 99, background=background_color)
-
-            # dice.throw()
+            # start drawing
+            self.draw_main_elements()
 
             player1.update()
             player2.update()
             player3.update()
             player4.update()
+
+            self.state = dice.update(self.state)
+            message.update(self.state, dice.number)
+
+            pressed = pg.key.get_pressed()
+            alt_held = pressed[pg.K_LALT] or pressed[pg.K_RALT]
+            ctrl_held = pressed[pg.K_LCTRL] or pressed[pg.K_RCTRL]
+            for event in pg.event.get():
+                if event.type == pg.QUIT:  # close button
+                    self.terminated = True
+                if event.type == pg.KEYDOWN:
+                    if (event.key == pg.K_F4 and alt_held) or (event.key == pg.K_w and ctrl_held):  # alt+f4 or ctrl+w
+                        self.terminated = True
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    coordinates = pg.mouse.get_pos()
+                    print(coordinates)
+                    print(self.state)
+                    if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1]:
+                        self.state = 'dice throw'
+                    elif text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1]:
+                        message.update('message click', dice.number)
+                    elif character_split <= coordinates[0] and bar_split <= coordinates[1]:
+                        print(f'PLAYER selected: {self.current}')
+                        
 
             pg.display.update()  # redraw
 
@@ -126,6 +116,14 @@ class Grid:
             pg.draw.line(screen, black_color, (0, y), (window_w, y))
 
 
+class Board:
+    def __init__(self):
+        pass
+
+    def something(self):
+        pass
+
+
 class Message:
     def __init__(self):
         self.string_no = 0
@@ -133,62 +131,85 @@ class Message:
         self.position = (text_split + self.border, bar_split + self.border)
         self.step = self.border
 
-    def display(self, string, size=32, color=black_color, background=None):
-        text_height, text_weight = MainScreen.draw_text(string, size, self.position, color, background)
-        self.step += text_height
-        self.position = (text_split + self.border, bar_split + self.step)
+    @staticmethod
+    def draw_text(text_object, position):
+        screen.blit(text_object, (position, (0, 0)))
 
-    def reset(self):
+    @staticmethod
+    def render_text(text, size, color, background):
+        font = pg.font.Font(font_path, size)
+        text = font.render(text, True, color, background)
+        text_rect = text.get_rect()
+        text_height = text_rect[3] - text_rect[1]
+        text_weight = text_rect[2] - text_rect[0]
+        return text, text_height, text_weight
+
+    def display(self, string, size=32, color=black_color, background=None, center=True):
+        text, text_height, text_weight = self.render_text(string, size, color, background)
+        if not center:
+            self.position = (text_split + self.border, bar_split + self.step)
+        else:
+            self.position = (text_split + int((character_split - text_split)/2) - int(text_weight/2),
+                             bar_split + self.step)
+        self.draw_text(text, self.position)
+        self.step += text_height
+
+    def update(self, state, number):
         self.step = self.border
         self.position = (text_split + self.border, bar_split + self.border)
-
-
-class Score:
-    def __init__(self):
-        self.position = (30, bar_split + 30)
-
-    def update(self, count):
-        MainScreen.draw_text(f'ОЧКОВ: {count}', 64, self.position, background_color, score_color)
+        if state == 'player select':
+            self.display('ДОБРОПОЖ')
+            self.display('Это ИГРА в ФИШЕЧКИ')
+            self.display('Выбирай ИГРОКА (ИГРОК это справа)')
+        if state == 'first move':
+            self.display('ДОБРОПОЖ')
+            self.display('Это ИГРА в ФИШЕЧКИ')
+            self.display('Кидай КУБИК (КУБИК это слева)')
+        elif state == 'dice wait':
+            self.display('Кости летят как шлюхи с небоскреба...')
+        elif state == 'dice done':
+            self.display(f'Выброшено {number + 1} костей')
+        elif state == 'message click':
+            self.display('')
+            self.display('КЛЕК')
 
 
 class Dice:
     def __init__(self):
         self.position = (0, bar_split + 3)
         self.sprite = throw_image
-        # self.blink = False  # if blink: sprite is not displayed
-        self.dice_wait = True  # initial state of dice image displaying
-        self.roll_frames = 10  # frames amount for dice animation
+        # self.dice_wait = True  # initial state of dice image displaying
+        self.roll_frames = roll_frames  # frames amount for dice animation
         self.rolled_count = 0  # dice rolled count (for internal use)
         self.number = 5  # initial dice number
-        self.update()
+        self.state = 'first move'
 
-    def update(self):
-        if self.dice_wait:
+    def update(self, state):
+        self.state = state
+        if state == 'player select':
+            # self.sprite = throw_image
+            # screen.blit(self.sprite, self.position)
+            pass
+        if state == 'first move':
             self.sprite = throw_image
             screen.blit(self.sprite, self.position)
-        else:
+        elif state == 'dice throw':
+            self.number = randrange(5)
+            self.rolled_count = 1
+            self.state = 'dice wait'
+            self.sprite = dice_images[self.number]
+        elif state == 'dice wait':
             if self.rolled_count < self.roll_frames:
                 self.number = randrange(5)
                 self.rolled_count += 1
+                self.state = 'dice wait'
+            else:
+                self.state = 'dice done'
             self.sprite = dice_images[self.number]
-            screen.blit(self.sprite, self.position)
-            # if not self.blink:
-            #     screen.blit(self.sprite, self.position)
-            #     self.blink = True
-            # else:
-            #     self.blink = False
-
-    def wait(self):
-        self.dice_wait = True
-        self.update()
-
-    def throw(self):
-        self.rolled_count = 0
-        self.dice_wait = False
-        self.update()
-
-    def left_click(self):
-        self.throw()
+        elif state == 'dice done':
+            pass
+        screen.blit(self.sprite, self.position)
+        return self.state
 
 
 class Player:
