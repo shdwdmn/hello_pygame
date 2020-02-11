@@ -1,6 +1,6 @@
-import os
-import random
 import pygame as pg
+from os import environ
+from random import randrange
 
 window_w = 1600
 window_h = 900
@@ -31,7 +31,7 @@ for i in range(0, len(char_images)):
     char_images[i] = pg.transform.scale(char_images[i], char_size)
 
 font_path = 'fonts/Ritalin.ttf'
-os.environ['SDL_VIDEO_WINDOW_POS'] = window_position
+environ['SDL_VIDEO_WINDOW_POS'] = window_position
 
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
@@ -39,19 +39,9 @@ pg.display.set_caption("MAP")
 clock = pg.time.Clock()
 
 
-def draw_text(text, size, position, color, background):
-    font = pg.font.Font(font_path, size)
-    text = font.render(text, True, color, background)
-    screen.blit(text, (position, (0, 0)))
-    text_rect = text.get_rect()
-    text_height = text_rect[3]-text_rect[1]
-    text_weight = text_rect[2]-text_rect[0]
-    return text_height, text_weight
-
-
 class MainScreen:
     def __init__(self):
-        self.terminated = False
+        # self.terminated = False
         self.player1 = Player(1)
         self.player2 = Player(2)
         self.player3 = Player(3)
@@ -61,7 +51,17 @@ class MainScreen:
         self.message = Message()
 
     @staticmethod
-    def main_elements():
+    def draw_text(text, size, position, color, background):
+        font = pg.font.Font(font_path, size)
+        text = font.render(text, True, color, background)
+        screen.blit(text, (position, (0, 0)))
+        text_rect = text.get_rect()
+        text_height = text_rect[3] - text_rect[1]
+        text_weight = text_rect[2] - text_rect[0]
+        return text_height, text_weight
+
+    @staticmethod
+    def draw_main_elements():
         screen.fill(background_color)
         screen.blit(background_image, (0, 0))
         pg.draw.line(screen, black_color, (0, bar_split), (window_w, bar_split), 4)
@@ -69,10 +69,11 @@ class MainScreen:
         pg.draw.line(screen, black_color, (character_split, bar_split), (character_split, window_h), 4)
 
     def update(self):
-        while not self.terminated:  # main cycle
+        # while not self.terminated:  # main cycle
+        while True:  # main cycle
             clock.tick(frame_rate)
 
-            self.main_elements()
+            self.draw_main_elements()
 
             dice = self.dice
             dice.update()
@@ -87,7 +88,8 @@ class MainScreen:
 
             for event in pg.event.get():  # TODO: catch alt+f4 also
                 if event.type == pg.QUIT:  # 'close' button event
-                    self.terminated = True
+                    # self.terminated = True
+                    return
 
             coordinates = (-1, -1)
             if pg.mouse.get_pressed()[0]:  # 0 for left mouse button, 1 for mid, 2 for right
@@ -132,7 +134,7 @@ class Message:
         self.step = self.border
 
     def display(self, string, size=32, color=black_color, background=None):
-        text_height, text_weight = draw_text(string, size, self.position, color, background)
+        text_height, text_weight = MainScreen.draw_text(string, size, self.position, color, background)
         self.step += text_height
         self.position = (text_split + self.border, bar_split + self.step)
 
@@ -146,7 +148,7 @@ class Score:
         self.position = (30, bar_split + 30)
 
     def update(self, count):
-        draw_text(f'ОЧКОВ: {count}', 64, self.position, background_color, score_color)
+        MainScreen.draw_text(f'ОЧКОВ: {count}', 64, self.position, background_color, score_color)
 
 
 class Dice:
@@ -166,7 +168,7 @@ class Dice:
             screen.blit(self.sprite, self.position)
         else:
             if self.rolled_count < self.roll_frames:
-                self.number = random.randrange(5)
+                self.number = randrange(5)
                 self.rolled_count += 1
             self.sprite = dice_images[self.number]
             screen.blit(self.sprite, self.position)
@@ -203,5 +205,4 @@ class Player:
 main_screen = MainScreen()
 main_screen.update()
 
-pg.quit()
 quit()
