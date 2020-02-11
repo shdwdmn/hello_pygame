@@ -6,6 +6,7 @@ window_w = 1600
 window_h = 900
 frame_rate = 8
 roll_frames = 15  # frames amount for dice animation
+win = 50  # score to win
 bar_split = int(window_h / 5 * 4)
 text_split = int(window_w / 5 * 1)
 character_split = int(window_w / 5 * 4)
@@ -38,7 +39,20 @@ pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('FISHECHKI')
 clock = pg.time.Clock()
-states_list = ('player select', 'first move', 'dice throw', 'dice wait', 'dice done')
+states_list = ('player select', 'player change', 'first move', 'invitation', 'dice throw', 'dice wait', 'dice done')
+
+
+def draw_text(text_object, position):
+    screen.blit(text_object, (position, (0, 0)))
+
+
+def render_text(text, size, color, background):
+    font = pg.font.Font(font_path, size)
+    text = font.render(text, True, color, background)
+    text_rect = text.get_rect()
+    text_height = text_rect[3] - text_rect[1]
+    text_weight = text_rect[2] - text_rect[0]
+    return text, text_height, text_weight
 
 
 class MainScreen:
@@ -97,13 +111,25 @@ class MainScreen:
                     coordinates = pg.mouse.get_pos()
                     print(coordinates)
                     print(self.state)
-                    if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1]:
-                        self.state = 'dice throw'
-                    elif text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1]:
+                    if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1]:  # dice
+                        if self.state == 'first move' or self.state == 'invitation':
+                            self.state = 'dice throw'
+                    elif text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1]:  # messages
                         message.update('message click', dice.number)
-                    elif character_split <= coordinates[0] and bar_split <= coordinates[1]:
-                        print(f'PLAYER selected: {self.current}')
-                        
+                    elif character_split <= coordinates[0] and bar_split <= coordinates[1]:  # players
+                        if character_split+char_size[0]*0 <= coordinates[0] <= character_split+char_size[0]*1:
+                            player1.score += 1
+                        elif character_split+char_size[0]*1 <= coordinates[0] <= character_split+char_size[0]*2:
+                            player2.score += 1
+                        elif character_split+char_size[0]*2 <= coordinates[0] <= character_split+char_size[0]*3:
+                            player3.score += 1
+                        elif character_split+char_size[0]*3 <= coordinates[0] <= character_split+char_size[0]*4:
+                            player4.score += 1
+
+                        if self.state == 'player select':
+                            self.state = 'first move'
+                        if self.state == 'dice done':
+                            self.state = 'player change'
 
             pg.display.update()  # redraw
 
@@ -131,30 +157,17 @@ class Message:
         self.position = (text_split + self.border, bar_split + self.border)
         self.step = self.border
 
-    @staticmethod
-    def draw_text(text_object, position):
-        screen.blit(text_object, (position, (0, 0)))
-
-    @staticmethod
-    def render_text(text, size, color, background):
-        font = pg.font.Font(font_path, size)
-        text = font.render(text, True, color, background)
-        text_rect = text.get_rect()
-        text_height = text_rect[3] - text_rect[1]
-        text_weight = text_rect[2] - text_rect[0]
-        return text, text_height, text_weight
-
     def display(self, string, size=32, color=black_color, background=None, center=True):
-        text, text_height, text_weight = self.render_text(string, size, color, background)
+        text, text_height, text_weight = render_text(string, size, color, background)
         if not center:
             self.position = (text_split + self.border, bar_split + self.step)
         else:
             self.position = (text_split + int((character_split - text_split)/2) - int(text_weight/2),
                              bar_split + self.step)
-        self.draw_text(text, self.position)
+        draw_text(text, self.position)
         self.step += text_height
 
-    def update(self, state, number):
+    def update(self, state, number=None):
         self.step = self.border
         self.position = (text_split + self.border, bar_split + self.border)
         if state == 'player select':
@@ -162,12 +175,12 @@ class Message:
             self.display('Это ИГРА в ФИШЕЧКИ')
             self.display('Выбирай ИГРОКА (ИГРОК это справа)')
         if state == 'first move':
-            self.display('ДОБРОПОЖ')
-            self.display('Это ИГРА в ФИШЕЧКИ')
+            self.display('Ходит Игрок №1')
+            self.display('И не важно, что ты там нажал')
             self.display('Кидай КУБИК (КУБИК это слева)')
         elif state == 'dice wait':
             self.display('Кости летят как шлюхи с небоскреба...')
-        elif state == 'dice done':
+        elif state == 'dice done' and number:
             self.display(f'Выброшено {number + 1} костей')
         elif state == 'message click':
             self.display('')
@@ -182,7 +195,7 @@ class Dice:
         self.roll_frames = roll_frames  # frames amount for dice animation
         self.rolled_count = 0  # dice rolled count (for internal use)
         self.number = 5  # initial dice number
-        self.state = 'first move'
+        self.state = 'player select'
 
     def update(self, state):
         self.state = state
@@ -213,14 +226,25 @@ class Dice:
 
 
 class Player:
-    def __init__(self, num):
+    def __init__(self, number):
         self.border = 3
-        self.num = num
-        self.sprite = char_images[num-1]
+        self.number = number
+        self.score = 0
+        self.sprite = char_images[number - 1]
+        self.initial_pos = (character_split + char_size[0] * (self.number - 1) + self.border, bar_split + self.border)
         self.update()
 
     def update(self):
-        screen.blit(self.sprite, (character_split + char_size[0]*(self.num-1) + self.border, bar_split + self.border))
+        position = self.initial_pos
+        if self.score > 0:
+            start = (position[0], position[1] - self.border - char_size[1])
+            end = (position[0] - character_split, char_size[1])
+            path_x = end[0] - start[0]
+            path_y = end[1] - start[1]
+            position = (start[0] + int(path_x/win*self.score), start[1] + int(path_y/win*self.score))
+        text, text_height, text_weight = render_text(f'{self.score}', 24, pg.Color('red'), background_color)
+        draw_text(text, position)  # TODO: fix drawing score text
+        screen.blit(self.sprite, position)
 
 
 main_screen = MainScreen()
