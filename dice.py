@@ -39,13 +39,24 @@ pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('FISHECHKI')
 clock = pg.time.Clock()
-states_list = ('player select', 'player change', 'first move', 'invitation', 'dice throw', 'dice wait', 'dice done')
 coord_list = ((1372, 517), (1397, 367), (1407, 244), (1377, 131), (1273, 41), (1086, 61), (987, 168),
               (938, 308), (934, 433), (960, 555), (831, 635), (772, 413), (799, 255), (762, 133), (628, 63),
               (467, 128), (402, 257), (396, 438), (394, 576), (292, 649), (225, 501), (233, 353), (243, 181))
 start = (1352, 642)
 finish = (161, 80)
 goal_score = len(coord_list)
+wait_phrases = ('Кости летят как хлебушек с паштетом...',
+                'Кости летят как шлюхи с небоскреба...',
+                'Эх кости мои кости...',
+                'Ах если бы не кости, кости-костюшки мои...',
+                'Мы идем. а кости летят',
+                'Кости летят, а они сидят',
+                'Любишь кости, люби и летать',
+                'Не те кости летают, что в стакане',
+                'Стакан без костей хорош лишь только промежутками',
+                'Что кости, а что бросает, где грань, и где же потолок?',
+                'Чем кость не тешилась, лишь бы летала')
+states_list = ('first move', 'dice throw', 'dice wait', 'dice done', 'moving', 'player change', 'victory')
 
 
 def draw_text(text_object: object, position: tuple):
@@ -64,7 +75,7 @@ def render_text(text: object, size: int, color, background):
 class MainScreen:
     def __init__(self):
         self.terminated = False
-        self.state = states_list[0]
+        self.state = 'first move'
         self.dice = Dice()
         self.board = Board()
         self.message = Message()
@@ -72,7 +83,8 @@ class MainScreen:
         self.player2 = Player(2)
         self.player3 = Player(3)
         self.player4 = Player(4)
-        self.current = self.player1
+        self.players = [self.player1, self.player2, self.player3, self.player4]
+        self.current = self.players[0]
 
     @staticmethod
     def draw_main_elements():
@@ -82,28 +94,48 @@ class MainScreen:
         pg.draw.line(screen, black_color, (text_split, bar_split), (text_split, window_h), 4)
         pg.draw.line(screen, black_color, (character_split, bar_split), (character_split, window_h), 4)
 
+    def change_player(self):
+        if self.current == self.player1:
+            self.current = self.player2
+        elif self.current == self.player2:
+            self.current = self.player3
+        elif self.current == self.player3:
+            self.current = self.player4
+        elif self.current == self.player4:
+            self.current = self.player1
+
     def update(self):
         while not self.terminated:  # main cycle
             dice = self.dice
             board = self.board
             message = self.message
-            player1 = self.player1
-            player2 = self.player2
-            player3 = self.player3
-            player4 = self.player4
+            player = self.current
 
             clock.tick(frame_rate)
 
-            # start drawing
             self.draw_main_elements()
 
-            player1.update(board.nodes_list[player1.score].effects)
-            player2.update(board.nodes_list[player2.score].effects)
-            player3.update(board.nodes_list[player3.score].effects)
-            player4.update(board.nodes_list[player4.score].effects)
+            if self.state == 'moving':
+                print(f'Player {player.number}: score={player.score}')
+                player.score += dice.number
+                player.draw()
+                node = board.nodes_list[player.score]
+                bonus = node.bonus
+                surprise = node.surprise
+                print(f'moving to {player.score}: surprise is {surprise}, bonus={bonus}')
+                print(f'New score is {player.score}')
+                self.state = 'new cell'
+                self.change_player()
+                print(self.state)
+            self.player1.draw()
+            self.player2.draw()
+            self.player3.draw()
+            self.player4.draw()
 
             self.state = dice.update(self.state)
-            message.update(self.state, dice.number)
+
+            node = board.nodes_list[player.score]
+            message.update(self.state, dice.number, player.score, node.surprise, node.bonus, player.phrase)
 
             pressed = pg.key.get_pressed()
             alt_held = pressed[pg.K_LALT] or pressed[pg.K_RALT]
@@ -117,34 +149,34 @@ class MainScreen:
                 if event.type == pg.MOUSEBUTTONDOWN:
                     coordinates = pg.mouse.get_pos()
                     print(coordinates)
-                    if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1]:  # dice
-                        if self.state == 'first move' or self.state == 'invitation':
+                    if 0 <= coordinates[0] <= text_split and bar_split <= coordinates[1]:  # dice area
+                        if self.state == 'first move' or self.state == 'player change':
                             self.state = 'dice throw'
                             print(self.state)
-                    elif 0 <= coordinates[1] <= bar_split:  # board
-                        if self.state == 'dice throw':
-                            self.state = 'first move'
+                        elif self.state == 'dice done':
+                            self.state = 'moving'
                             print(self.state)
-                        if self.state == 'player select':
-                            self.state = 'first move'
+                    elif 0 <= coordinates[1] <= bar_split:  # board area
+                        if self.state == 'dice done':
+                            self.state = 'moving'
+                            print(self.state)
+                        elif self.state == 'player change':
+                            self.state = 'dice throw'
+                            print(self.state)
+                        elif self.state == 'new cell':
+                            self.state = 'player change'
                             print(self.state)
                     elif text_split <= coordinates[0] <= character_split and bar_split <= coordinates[1]:  # messages
                         message.update('message click', dice.number)
                     elif character_split <= coordinates[0] and bar_split <= coordinates[1]:  # players
-                        # if character_split+char_size[0]*0 <= coordinates[0] <= character_split+char_size[0]*1:
-                        #     player1.score += 1
-                        # elif character_split+char_size[0]*1 <= coordinates[0] <= character_split+char_size[0]*2:
-                        #     player2.score += 1
-                        # elif character_split+char_size[0]*2 <= coordinates[0] <= character_split+char_size[0]*3:
-                        #     player3.score += 1
-                        # elif character_split+char_size[0]*3 <= coordinates[0] <= character_split+char_size[0]*4:
-                        #     player4.score += 1
-
-                        if self.state == 'player select':
-                            self.state = 'first move'
+                        if self.state == 'player change':
+                            self.state = 'dice throw'
                             print(self.state)
-                        if self.state == 'dice done':
+                        elif self.state == 'new cell':
                             self.state = 'player change'
+                            print(self.state)
+                        elif self.state == 'dice done':
+                            self.state = 'moving'
                             print(self.state)
 
             pg.display.update()  # redraw
@@ -164,19 +196,27 @@ class Board:
         self.nodes_list.append(Node(start[0], start[1], 'start'))
         for node in range(1, goal_score):
             self.nodes_list.append(Node(coord_list[node][0], coord_list[node][1], 'regular'))
-            print(f'node #{node}, effects: {self.nodes_list[node].effects}')
+            print(f'node #{node}, bonus: {self.nodes_list[node].bonus}, surprise: {self.nodes_list[node].surprise}')
         self.nodes_list.append(Node(finish[0], finish[1], 'finish'))
 
 
 class Node:
     def __init__(self, x: int, y: int, kind: str):
-        effects_list = ('+2 steps', '-2 steps')
-        effects_count = 2
         self.coordinates = (x, y)
         self.kind = kind
-        self.effects = []
-        for count in range(effects_count):
-            self.effects.append(effects_list[randrange(len(effects_list))])
+
+        if randrange(5) > 1:  # 20% chance
+            if randrange(2) == 1:
+                self.bonus = 4
+            else:
+                self.bonus = -4
+        else:
+            self.bonus = 0
+
+        if randrange(5) > 1:
+            self.surprise = True
+        else:
+            self.surprise = False
 
 
 class Message:
@@ -196,24 +236,28 @@ class Message:
         draw_text(text, self.position)
         self.step += text_height
 
-    def update(self, state: str, number=None, score=0, effects=()):
+    def update(self, state: str, number=None, score=0, surprise=False, bonus=0, phrase=''):
         self.step = self.border
         self.position = (text_split + self.border, bar_split + self.border)
-        if state == 'player select':
-            self.display('ДОБРОПОЖ')
-            self.display('Это ИГРА в ФИШЕЧКИ')
-            self.display('Выбирай ИГРОКА (ИГРОК это справа)')
         if state == 'first move':
             self.display('Ходит Игрок №1')
-            self.display('И не важно, что ты там нажал')
+            self.display('')
             self.display('Кидай КУБИК (КУБИК это слева)')
         elif state == 'dice wait':
-            self.display('Кости летят как шлюхи с небоскреба...')
+            self.display(phrase)
         elif state == 'dice done' and number:
             self.display(f'Выброшено {number + 1} костей')
         elif state == 'moving':
-            self.display(f'Ячейка {score}')
-            self.display(f'{effects}')
+            self.display('Передвигаемся...')
+        elif state == 'new cell':
+            self.display(f'Клетка {score}')
+            if surprise:
+                self.display(f'СЮР-ПРИЗ!')
+            else:
+                self.display('')
+            self.display(f'Бонус: {bonus}')
+
+
         elif state == 'message click':
             self.display('')
             self.display('КЛЕК')
@@ -231,10 +275,6 @@ class Dice:
 
     def update(self, state: str):
         self.state = state
-        if state == 'player select':
-            # self.sprite = throw_image
-            # screen.blit(self.sprite, self.position)
-            pass
         if state == 'first move':
             self.sprite = throw_image
             screen.blit(self.sprite, self.position)
@@ -242,6 +282,7 @@ class Dice:
             self.number = randrange(5)
             self.rolled_count = 1
             self.state = 'dice wait'
+            print(self.state)
             self.sprite = dice_images[self.number]
         elif state == 'dice wait':
             if self.rolled_count < self.roll_frames:
@@ -250,6 +291,7 @@ class Dice:
                 self.state = 'dice wait'
             else:
                 self.state = 'dice done'
+                print(self.state)
             self.sprite = dice_images[self.number]
         elif state == 'dice done':
             pass
@@ -264,24 +306,37 @@ class Player:
         self.score = 0
         self.sprite = char_images[number - 1]
         self.initial_pos = (character_split + char_size[0] * (self.number - 1) + self.border, bar_split + self.border)
-        self.update()
+        self.new_cell()
+        self.phrase = ''
 
-    def update(self, effects=()):
-        if '+2 steps' in effects:
-            self.score += 2
-        if '-2 steps' in effects:
-            self.score -= 2
-
+    def draw(self):
         if self.score == 0:
             position = self.initial_pos
         elif 0 < self.score < goal_score:
-            position = coord_list[self.score-1]
+            position = coord_list[self.score - 1]
         else:
             position = finish
 
         text, text_height, text_weight = render_text(f'{self.score}', 24, pg.Color('red'), background_color)
-        draw_text(text, position)  # TODO: fix drawing score text
+        if self.score > 0:
+            draw_text(text, self.initial_pos)  # TODO: fix drawing score text
         screen.blit(self.sprite, position)
+
+    def new_cell(self, bonus=0, surprise=False):
+        if surprise:
+            if randrange(5) == 0:
+                bonus = 8
+            elif randrange(5) == 1:
+                bonus = -8
+            elif randrange(5) == 2:
+                pass
+            elif randrange(5) == 3:
+                bonus = 6
+            elif randrange(5) == 4:
+                bonus = -6
+        self.score += bonus
+        if self.score < 0:
+            self.score = 0
 
 
 main_screen = MainScreen()
