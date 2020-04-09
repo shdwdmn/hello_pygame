@@ -39,9 +39,9 @@ pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('FISHECHKI')
 clock = pg.time.Clock()
-coord_list = ((1372, 517), (1397, 367), (1407, 244), (1377, 131), (1273, 41), (1086, 61), (987, 168),
-              (938, 308), (934, 433), (960, 555), (831, 635), (772, 413), (799, 255), (762, 133), (628, 63),
-              (467, 128), (402, 257), (396, 438), (394, 576), (292, 649), (225, 501), (233, 353), (243, 181))
+coord_list = ((1372, 517), (1397, 367), (1407, 244), (1377, 131), (1273, 41), (1086, 61), (987, 168), (938, 308),
+              (934, 433), (960, 555), (831, 635), (772, 413), (799, 255), (762, 133), (628, 63), (467, 128),
+              (402, 257), (396, 438), (394, 576), (292, 649), (225, 501), (233, 353), (243, 181))
 start = (1352, 642)
 finish = (161, 80)
 goal_score = len(coord_list)
@@ -76,6 +76,7 @@ class MainScreen:
     def __init__(self):
         self.terminated = False
         self.state = 'first move'
+        print(self.state)
         self.dice = Dice()
         self.board = Board()
         self.message = Message()
@@ -213,8 +214,18 @@ class Node:
         else:
             self.bonus = 0
 
-        if randrange(5) > 1:
+        if randrange(4) < 1:
             self.surprise = True
+            if randrange(5) == 0:
+                self.bonus = 8
+            elif randrange(5) == 1:
+                self.bonus = -8
+            elif randrange(5) == 2:
+                pass
+            elif randrange(5) == 3:
+                self.bonus = 0
+            elif randrange(5) == 4:
+                self.bonus = 6
         else:
             self.surprise = False
 
@@ -256,8 +267,6 @@ class Message:
             else:
                 self.display('')
             self.display(f'Бонус: {bonus}')
-
-
         elif state == 'message click':
             self.display('')
             self.display('КЛЕК')
@@ -267,7 +276,6 @@ class Dice:
     def __init__(self):
         self.position = (0, bar_split + 3)
         self.sprite = throw_image
-        # self.dice_wait = True  # initial state of dice image displaying
         self.roll_frames = roll_frames  # frames amount for dice animation
         self.rolled_count = 0  # dice rolled count (for internal use)
         self.number = 5  # initial dice number
@@ -323,17 +331,6 @@ class Player:
         screen.blit(self.sprite, position)
 
     def new_cell(self, bonus=0, surprise=False):
-        if surprise:
-            if randrange(5) == 0:
-                bonus = 8
-            elif randrange(5) == 1:
-                bonus = -8
-            elif randrange(5) == 2:
-                pass
-            elif randrange(5) == 3:
-                bonus = 6
-            elif randrange(5) == 4:
-                bonus = -6
         self.score += bonus
         if self.score < 0:
             self.score = 0
