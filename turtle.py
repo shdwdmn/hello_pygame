@@ -5,10 +5,8 @@ background_color = (255, 255, 255)
 screen_size = (1600, 800)
 font_path = 'fonts/Titillium-Bold.otf'
 
-green = (0, 255, 0)
-
 pygame.init()
-screen = pygame.display.set_mode((500, 500))
+screen = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("TURTLE")
 
 
