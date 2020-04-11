@@ -2,7 +2,9 @@ import pygame as pg
 from os import environ
 from random import randrange
 
-# TODO: difficulties
+# TODO:
+#  - difficulties
+#  - boxing hand on hover
 win_score = 20
 start_timer = 10
 clown_size = 150
@@ -102,10 +104,12 @@ def start_over():
 timer = start_timer
 is_start = True
 is_reset = True
+clown_position = (-1, -1)
+clown = clowns[0]
 
 while True:
-    big_button_pressed = False
     clock.tick(frame_rate)
+    big_button_pressed = False
     screen.blit(background_image, (0, 0))
 
     if is_reset:
@@ -131,11 +135,12 @@ while True:
                     big_button[0][1] <= coordinates[1] <= big_button[0][1] + big_button[1][1]:
                 big_button_pressed = True
             if clown_position[0] - clown_size/2 <= coordinates[0] <= clown_position[0] + clown_size/2 and \
-                    clown_position[1] - clown_size/2 <= coordinates[1] <= clown_position[1] + clown_size/2:
+               clown_position[1] - clown_size/2 <= coordinates[1] <= clown_position[1] + clown_size/2 and \
+               score < win_score and timer > 0:  # CLOWN hit
                 score += 1
                 is_reset = True
 
-    if score == win_score:  # WIN screen
+    if score >= win_score:  # WIN screen
         pg.draw.rect(screen, white, big_button)
         pg.draw.rect(screen, red, big_button, 3)
         draw_text('YOU WIN !!!', (window_w/2, window_h/2), 50, red)
