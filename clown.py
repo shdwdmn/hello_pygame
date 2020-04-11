@@ -45,7 +45,7 @@ for clown_num in range(len(clowns)):
     clowns[clown_num] = pg.transform.scale(clowns[clown_num], (clown_size, clown_size))
 
 
-def draw_text(string: str, position: tuple, size=32, color=black, background=None, center=True):
+def draw_text(string: str, position=(0, 0), size=32, color=black, background=None, center=True):
     font = pg.font.Font(font_path, size)
     text = font.render(string, True, color, background)
     text_rect = text.get_rect()

@@ -23,7 +23,7 @@ background_image = pg.image.load('images/cat.jpg')
 background_image = pg.transform.scale(background_image, (window_w, window_h))
 
 
-def draw_text(string: str, position: tuple, size=32, color=black, background=None, center=True):
+def draw_text(string: str, position=(0, 0), size=32, color=black, background=None, center=True):
     font = pg.font.Font(font_path, size)
     text = font.render(string, True, color, background)
     text_rect = text.get_rect()
