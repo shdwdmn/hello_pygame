@@ -1,6 +1,7 @@
 import pygame as pg
 from os import environ
 from random import randrange
+from math import sin, cos, pi
 
 # TODO:
 #  - difficulties
@@ -67,6 +68,13 @@ def draw_timer(_timer: int):
     draw_text(f'TIMER::{_timer:.2f}', position, 48, brown, black, center=False)
 
 
+def draw_background():
+    screen.fill(white)
+    # poly_radius =
+    poly = ((100, 100), (200, 100), (200, 200), (150, 250), (100, 200))
+    # pg.draw.polygon(screen, black, poly)
+
+
 def get_clown():
     random = randrange(100)
     if 0 <= random <= 1:
@@ -101,16 +109,38 @@ def start_over():
     score = 0
 
 
+class Poly:
+    def __init__(self, edges):
+        # self.radius = 0
+        self.edges = edges
+        self.radius = 100
+        self.points = []
+
+    def calc(self):
+        for edge in range(self.edges):
+            angle = 2 * pi * edge / self.edges
+            point = (int(cos(angle) * self.radius + window_w/2),
+                     int(sin(angle) * self.radius + window_h/2))
+            self.points.append(point)
+            print(angle, angle/pi, point)
+
+    def step(self):
+        pass
+
+
 timer = start_timer
 is_start = True
 is_reset = True
 clown_position = (-1, -1)
 clown = clowns[0]
+poly = Poly(5)
+poly.calc()
 
 while True:
     clock.tick(frame_rate)
     big_button_pressed = False
-    screen.blit(background_image, (0, 0))
+    # screen.blit(background_image, (0, 0))
+    draw_background()
 
     if is_reset:
         clown, clown_num = get_clown()
@@ -151,7 +181,8 @@ while True:
         draw_text('YOU LOSE...', (window_w/2, window_h/2), 50, brown)
         draw_text(f'SCORE::{score}', (window_w/2, window_h/2 + 50), 38, brown)
     elif is_start:  # START screen
-        pg.draw.rect(screen, brown, big_button)
+        # pg.draw.rect(screen, brown, big_button)
+        pg.draw.polygon(screen, black, poly.points)
         pg.draw.rect(screen, red, big_button, 3)
         draw_text('PUSH IT HARD', (window_w/2, window_h/2), 38)
         draw_text(f'get {win_score} for {timer} sec', (window_w/2, window_h/2 + 50), 32)
