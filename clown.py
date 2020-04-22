@@ -1,6 +1,6 @@
 import pygame as pg
 from os import environ
-from random import randrange
+from random import randrange, shuffle
 from math import sin, cos, pi
 
 # TODO:
@@ -9,10 +9,13 @@ from math import sin, cos, pi
 win_score = 20
 start_timer = 10
 clown_size = 150
+star_edges = 9
+star_rotate = pi/300
+star_gauge = 3
 
 window_w = 1225
 window_h = 875
-frame_rate = 20
+frame_rate = 60
 window_position = '675, 125'
 black = pg.Color('black')  # (0, 0, 0, 255)
 brown = pg.Color('brown')
@@ -25,6 +28,8 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('PUNCH THAT CLOWN')
+pg.mixer_music.load('midi/6589.mid')
+pg.mixer_music.play()
 clock = pg.time.Clock()
 
 big_button = ((int(window_w/5*2), int(window_h/5*2)), (int(window_w/5), int(window_h/5)))
@@ -68,13 +73,6 @@ def draw_timer(_timer: int):
     draw_text(f'TIMER::{_timer:.2f}', position, 48, brown, black, center=False)
 
 
-def draw_background():
-    screen.fill(white)
-    # poly_radius =
-    poly = ((100, 100), (200, 100), (200, 200), (150, 250), (100, 200))
-    # pg.draw.polygon(screen, black, poly)
-
-
 def get_clown():
     random = randrange(100)
     if 0 <= random <= 1:
@@ -101,31 +99,62 @@ def get_clown():
     return clown_image, clown_number
 
 
+def random_color():
+    rgb = [255, 0, 0]
+    shuffle(rgb)
+    return tuple(rgb)
+
+
 def start_over():
     global is_start, is_reset, timer, score
     is_start = True
     is_reset = True
     timer = start_timer
     score = 0
+    pg.mixer_music.play()
 
 
-class Poly:
+class Star:
     def __init__(self, edges):
-        # self.radius = 0
         self.edges = edges
-        self.radius = 100
+        self.radius = 0
         self.points = []
+        self.angle_step = 2 * pi / self.edges
+        self.start_angle = 0
 
     def calc(self):
+        self.points = []
         for edge in range(self.edges):
-            angle = 2 * pi * edge / self.edges
+            angle = self.angle_step * edge + self.start_angle
+            int_angle = self.angle_step * (edge + 0.5)
             point = (int(cos(angle) * self.radius + window_w/2),
                      int(sin(angle) * self.radius + window_h/2))
+            int_point = (int(cos(int_angle) * self.radius * 0.6 + window_w / 2),
+                         int(sin(int_angle) * self.radius * 0.6 + window_h / 2))
             self.points.append(point)
-            print(angle, angle/pi, point)
+            self.points.append(int_point)
 
-    def step(self):
-        pass
+        self.radius += 5
+        self.start_angle += star_rotate
+
+
+class Background:
+    def __init__(self):
+        self.stars = []
+        self.stars.append(Star(star_edges))
+
+    def draw(self):
+        screen.fill(white)
+        # if len(self.stars) > 10:
+        #     self.stars = []
+        #     self.stars.append(Star(self.star_edges))
+        for star in self.stars:
+            star.calc()
+            pg.draw.polygon(screen, random_color(), star.points, star_gauge)
+            if star.radius == 25:
+                self.stars.append(Star(star_edges))
+            if star.radius >= window_w:
+                self.stars.pop(0)
 
 
 timer = start_timer
@@ -133,14 +162,13 @@ is_start = True
 is_reset = True
 clown_position = (-1, -1)
 clown = clowns[0]
-poly = Poly(5)
-poly.calc()
+back = Background()
 
 while True:
     clock.tick(frame_rate)
     big_button_pressed = False
     # screen.blit(background_image, (0, 0))
-    draw_background()
+    back.draw()
 
     if is_reset:
         clown, clown_num = get_clown()
@@ -181,8 +209,7 @@ while True:
         draw_text('YOU LOSE...', (window_w/2, window_h/2), 50, brown)
         draw_text(f'SCORE::{score}', (window_w/2, window_h/2 + 50), 38, brown)
     elif is_start:  # START screen
-        # pg.draw.rect(screen, brown, big_button)
-        pg.draw.polygon(screen, black, poly.points)
+        pg.draw.rect(screen, brown, big_button)
         pg.draw.rect(screen, red, big_button, 3)
         draw_text('PUSH IT HARD', (window_w/2, window_h/2), 38)
         draw_text(f'get {win_score} for {timer} sec', (window_w/2, window_h/2 + 50), 32)
@@ -190,8 +217,8 @@ while True:
             is_start = False
     else:  # GAME screen
         timer -= 1 / frame_rate
-        draw_score(score)
         draw_timer(timer)
+        draw_score(score)
         screen.blit(clown, (int(clown_position[0] - clown_size/2), int(clown_position[1] - clown_size/2)))
 
     pg.display.update()  # redraw
