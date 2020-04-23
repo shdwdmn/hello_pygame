@@ -1,7 +1,7 @@
 import pygame as pg
 from os import environ
-from random import randrange, shuffle
 from math import sin, cos, pi
+from random import randrange, shuffle
 
 # TODO:
 #  - difficulties
@@ -28,8 +28,8 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('PUNCH THAT CLOWN')
-pg.mixer_music.load('midi/6589.mid')
-pg.mixer_music.play()
+pg.mixer_music.load('midi/fast.mid')
+pg.mixer_music.play(-1)
 clock = pg.time.Clock()
 
 big_button = ((int(window_w/5*2), int(window_h/5*2)), (int(window_w/5), int(window_h/5)))
@@ -121,6 +121,7 @@ class Star:
         self.points = []
         self.angle_step = 2 * pi / self.edges
         self.start_angle = 0
+        self.color = random_color()
 
     def calc(self):
         self.points = []
@@ -145,12 +146,9 @@ class Background:
 
     def draw(self):
         screen.fill(white)
-        # if len(self.stars) > 10:
-        #     self.stars = []
-        #     self.stars.append(Star(self.star_edges))
         for star in self.stars:
             star.calc()
-            pg.draw.polygon(screen, random_color(), star.points, star_gauge)
+            pg.draw.polygon(screen, star.color, star.points, star_gauge)
             if star.radius == 25:
                 self.stars.append(Star(star_edges))
             if star.radius >= window_w:
