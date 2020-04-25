@@ -16,8 +16,8 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
-pg.display.set_caption('PET THAT CAT')
-pg.mixer_music.load('midi/med.mid')
+pg.display.set_caption('MOON SHUTTLE')
+pg.mixer_music.load('midi/fast.mid')
 pg.mixer_music.play()
 clock = pg.time.Clock()
 
