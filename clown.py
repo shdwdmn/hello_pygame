@@ -4,10 +4,14 @@ from math import sin, cos, pi
 from random import randrange, shuffle
 
 # TODO:
-#  - difficulties
-#  - boxing hand on hover
+#  - win/lose sound
+#  - kick sound
+difficulties = ('EASY', 'NORMAL', 'HARD')
+difficulty = difficulties[2]
+modes = ('normal', 'epileptic')
+mode = modes[0]
 win_score = 20
-start_timer = 10
+timer_start = 10
 clown_size = 150
 star_edges = 9
 star_rotate = pi/300
@@ -27,7 +31,7 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
-pg.display.set_caption('PUNCH THAT CLOWN')
+pg.display.set_caption('KICK THAT CLOWN')
 pg.mixer_music.load('midi/fast.mid')
 pg.mixer_music.play(-1)
 clock = pg.time.Clock()
@@ -61,16 +65,6 @@ def draw_text(string: str, position=(0, 0), size=32, color=black, background=Non
         screen.blit(text, ((int(position[0] - text_weight/2), int(position[1] - text_height/2)), (0, 0)))
     else:
         screen.blit(text, ((int(position[0]), int(position[1])), (0, 0)))
-
-
-def draw_score(_score: int):
-    position = (window_w*1/25, window_h*9/10)
-    draw_text(f'SCORE::{_score}', position, 48, brown, black, center=False)
-
-
-def draw_timer(_timer: int):
-    position = (window_w*8/10, window_h*9/10)
-    draw_text(f'TIMER::{_timer:.2f}', position, 48, brown, black, center=False)
 
 
 def get_clown():
@@ -109,9 +103,8 @@ def start_over():
     global is_start, is_reset, timer, score
     is_start = True
     is_reset = True
-    timer = start_timer
+    timer = timer_start
     score = 0
-    pg.mixer_music.play()
 
 
 class Star:
@@ -145,19 +138,23 @@ class Background:
         self.stars.append(Star(star_edges))
 
     def draw(self):
-        screen.fill(white)
-        for star in self.stars:
-            star.calc()
-            pg.draw.polygon(screen, star.color, star.points, star_gauge)
-            if star.radius == 25:
-                self.stars.append(Star(star_edges))
-            if star.radius >= window_w:
-                self.stars.pop(0)
+        if mode == modes[0]:
+            screen.blit(background_image, (0, 0))
+        elif mode == modes[1]:
+            screen.fill(white)
+            for star in self.stars:
+                star.calc()
+                pg.draw.polygon(screen, star.color, star.points, star_gauge)
+                if star.radius == 25:
+                    self.stars.append(Star(star_edges))
+                if star.radius >= window_w:
+                    self.stars.pop(0)
 
 
-timer = start_timer
+timer = timer_start
 is_start = True
 is_reset = True
+is_music = True
 clown_position = (-1, -1)
 clown = clowns[0]
 back = Background()
@@ -165,13 +162,12 @@ back = Background()
 while True:
     clock.tick(frame_rate)
     big_button_pressed = False
-    # screen.blit(background_image, (0, 0))
     back.draw()
 
     if is_reset:
         clown, clown_num = get_clown()
-        clown_position = (randrange(clown_size, window_w - clown_size),
-                          randrange(clown_size, window_h - clown_size))
+        clown_position = (int(randrange(clown_size, window_w - clown_size) - clown_size/2),
+                          int(randrange(clown_size, window_h - clown_size) - clown_size/2))
         is_reset = False
 
     pressed = pg.key.get_pressed()
@@ -185,38 +181,68 @@ while True:
                 quit()
             if event.key == pg.K_r or pg.K_F5:
                 start_over()
+            if event.key == pg.K_d:
+                if difficulty == difficulties[2]:
+                    difficulty = difficulties[0]
+                    win_score = 10
+                elif difficulty == difficulties[0]:
+                    difficulty = difficulties[1]
+                    win_score = 15
+                elif difficulty == difficulties[1]:
+                    difficulty = difficulties[2]
+                    win_score = 20
+            if event.key == pg.K_e:
+                if mode == modes[1]:
+                    mode = modes[0]
+                else:
+                    mode = modes[1]
+            if event.key == pg.K_m:
+                if is_music:
+                    pg.mixer_music.stop()
+                    is_music = False
+                else:
+                    pg.mixer_music.play(-1)
+                    is_music = True
         if event.type == pg.MOUSEBUTTONDOWN:
             coordinates = pg.mouse.get_pos()
             if big_button[0][0] <= coordinates[0] <= big_button[0][0] + big_button[1][0] and \
                     big_button[0][1] <= coordinates[1] <= big_button[0][1] + big_button[1][1]:
                 big_button_pressed = True
-            if clown_position[0] - clown_size/2 <= coordinates[0] <= clown_position[0] + clown_size/2 and \
-               clown_position[1] - clown_size/2 <= coordinates[1] <= clown_position[1] + clown_size/2 and \
+            if clown_position[0] <= coordinates[0] <= clown_position[0] + clown_size and \
+               clown_position[1] <= coordinates[1] <= clown_position[1] + clown_size and \
                score < win_score and timer > 0:  # CLOWN hit
                 score += 1
                 is_reset = True
 
     if score >= win_score:  # WIN screen
+        pg.mouse.set_cursor(*pg.cursors.arrow)
         pg.draw.rect(screen, white, big_button)
         pg.draw.rect(screen, red, big_button, 3)
         draw_text('YOU WIN !!!', (window_w/2, window_h/2), 50, red)
-        draw_text(f'TIME::{start_timer - timer:.2f}', (window_w/2, window_h/2 + 50), 38, red)
+        draw_text(f'{win_score} for {timer_start - timer:.2f} sec', (window_w / 2, window_h / 2 + 50), 38, red)
     elif timer <= 0:  # LOSE screen
+        pg.mouse.set_cursor(*pg.cursors.arrow)
         pg.draw.rect(screen, black, big_button)
         pg.draw.rect(screen, red, big_button, 3)
         draw_text('YOU LOSE...', (window_w/2, window_h/2), 50, brown)
-        draw_text(f'SCORE::{score}', (window_w/2, window_h/2 + 50), 38, brown)
+        draw_text(f'SCORE::{score}/{win_score}', (window_w/2, window_h/2 + 50), 38, brown)
     elif is_start:  # START screen
+        pg.mouse.set_cursor(*pg.cursors.arrow)
         pg.draw.rect(screen, brown, big_button)
         pg.draw.rect(screen, red, big_button, 3)
-        draw_text('PUSH IT HARD', (window_w/2, window_h/2), 38)
+        draw_text('KICK \'EM FAST', (window_w/2, window_h/2), 38)
         draw_text(f'get {win_score} for {timer} sec', (window_w/2, window_h/2 + 50), 32)
+        draw_text(difficulty, (window_w/2, window_h*9.5/10), 48, brown, white, center=True)
+        draw_text('Press R to start over', (window_w*7.7/10, window_h*8.95/10), 24, black, white, center=False)
+        draw_text('Press E to go EPILEPTIC', (window_w*7.7/10, window_h*9.30/10), 24, black, white, center=False)
+        draw_text('Press D to change difficulty', (window_w*7.7/10, window_h*9.65/10), 24, black, white, center=False)
         if big_button_pressed:
             is_start = False
     else:  # GAME screen
+        pg.mouse.set_cursor(*pg.cursors.broken_x)
         timer -= 1 / frame_rate
-        draw_timer(timer)
-        draw_score(score)
-        screen.blit(clown, (int(clown_position[0] - clown_size/2), int(clown_position[1] - clown_size/2)))
+        draw_text(f'TIMER::{timer:.2f}', (window_w*8/10, window_h*9/10), 48, brown, black, center=False)
+        draw_text(f'SCORE::{score}', (window_w*1/25, window_h*9/10), 48, brown, black, center=False)
+        screen.blit(clown, (clown_position[0], clown_position[1]))
 
     pg.display.update()  # redraw
