@@ -9,7 +9,7 @@ frame_rate = 60
 grid = int(window_w / 20)
 grid_hor = int(window_w / grid)
 grid_ver = int(window_h / grid)
-speed_hor = int(grid / 3)
+speed_hor = int(grid / 6)
 speed_ver = int(grid / 3)
 window_position = '1275, 125'
 black = pg.Color('black')  # (0, 0, 0, 255)
@@ -82,10 +82,10 @@ def draw_background():
 
 
 def read_high_score():
-    global high_score
     save_file = open('shuttle.sav', 'r')
-    high_score = int(save_file.read())
+    read_score = int(save_file.read())
     save_file.close()
+    return read_score
 
 
 def update_high_score():
@@ -207,7 +207,7 @@ borders = Borders()
 shuttle = Shuttle()
 move_left = False
 move_right = False
-read_high_score()
+high_score = read_high_score()
 high_score_updated = False
 is_started = False
 
