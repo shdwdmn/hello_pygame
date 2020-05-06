@@ -32,7 +32,9 @@ environ['SDL_VIDEO_WINDOW_POS'] = window_position
 pg.init()
 screen = pg.display.set_mode((window_w, window_h))
 pg.display.set_caption('MOON SHUTTLE')
+saving_file = 'shuttle.sav'
 pg.mixer_music.load('midi/nemesis.mid')
+pg.mixer_music.play(-1)
 clock = pg.time.Clock()
 
 # background_image = pg.image.load('images/cat.jpg')
@@ -68,7 +70,7 @@ def draw_hud():
 def draw_start_screen():
     draw_text('Press  <left or right arrow>  to move', (window_w/2, window_h/2), 32, dark_red)
     draw_text('Press  <up or down arrow>  to start', (window_w/2, window_h/2 + 50), 32, dark_red)
-    draw_text('Press M to switch music', (window_w/2, window_h - 50), 24, dark_red)
+    draw_text('Press M to switch music on/off', (window_w/2, window_h - 50), 24, dark_red)
 
 
 def draw_background():
@@ -84,10 +86,10 @@ def draw_background():
 def read_high_score():
     save_file = None
     try:
-        save_file = open('shuttle.sav', 'r')
+        save_file = open(saving_file, 'r')
         read_score = int(save_file.read())
     except IOError:
-        save_file = open('shuttle.sav', 'x')
+        save_file = open(saving_file, 'x')
         read_score = 0
         save_file.write(str(read_score))
     finally:
@@ -98,7 +100,7 @@ def read_high_score():
 
 def update_high_score(new_score):
     global high_score_updated
-    save_file = open('shuttle.sav', 'w')
+    save_file = open(saving_file, 'w')  # read before update to catch exception
     save_file.write(str(new_score))
     save_file.close()
     high_score_updated = True
@@ -107,58 +109,50 @@ def update_high_score(new_score):
 class Shuttle:
     def __init__(self):
         self.width = grid * 2
-        self.height = grid * 4
-        self.x = window_w / 2 - grid
-        self.y = window_h - grid - self.height
+        self.height = grid * 2
+        self.x = int(window_w / 2 - grid)
+        self.y = int(window_h - grid*4/3 - self.height)
 
     def draw(self):
-        if (not move_left and not move_right) or (move_left and move_right):
-            pg.draw.rect(screen, red, ((int(self.x - self.width/4), int(self.y + self.height/8)),
-                                       (int(self.width/2), int(self.height*3/4))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2), int(self.y + self.height * 7 / 8)),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4), int(self.y + self.height * 7 / 8)),
-                                            (int(self.width/4), int(self.height/8))))
-        elif move_right:
+        body = ((int(self.x - self.width/4), int(self.y + self.height/4)),
+                (int(self.x + self.width/4), int(self.y + self.height/4)),
+                (int(self.x + self.width/4), int(self.y + self.height*3/4)),
+                (int(self.x - self.width/4), int(self.y + self.height*3/4)))
+        wheel_fl = ((int(self.x - self.width/2), self.y),  # front left
+                    (int(self.width/4), int(self.height/4)))
+        wheel_fr = ((int(self.x + self.width/4), self.y),
+                    (int(self.width/4), int(self.height/4)))
+        wheel_rl = ((int(self.x - self.width/2), int(self.y + self.height*3/4)),  # rear left
+                    (int(self.width/4), int(self.height/4)))
+        wheel_rr = ((int(self.x + self.width/4), int(self.y + self.height*3/4)),
+                    (int(self.width/4), int(self.height/4)))
+        if move_right:
             if self.x < window_w - grid * 2:
                 self.x += speed_hor
-            pg.draw.polygon(screen, red,
-                            ((int(self.x - self.width / 4), int(self.y + self.height / 8)),
-                             (int(self.x + self.width / 4), int(self.y + self.height / 8)),
-                             (int(self.x + self.width / 4 - speed_hor), int(self.y + self.height * 7 / 8)),
-                             (int(self.x - self.width / 4 - speed_hor), int(self.y + self.height * 7 / 8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2 - speed_hor),
-                                             int(self.y + self.height*7/8)),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4 - speed_hor),
-                                             int(self.y + self.height*7/8)),
-                                            (int(self.width/4), int(self.height/8))))
+            body = ((body[0][0], body[0][1]),
+                    (body[1][0], body[1][1]),
+                    (body[2][0] - speed_hor, body[2][1]),
+                    (body[3][0] - speed_hor, body[3][1]))
+            wheel_rl = ((wheel_rl[0][0] - speed_hor, wheel_rl[0][1]),
+                        (wheel_rl[1][0], wheel_rl[1][1]))
+            wheel_rr = ((wheel_rr[0][0] - speed_hor, wheel_rr[0][1]),
+                        (wheel_rr[1][0], wheel_rr[1][1]))
         elif move_left:
             if self.x > grid * 2:
                 self.x -= speed_hor
-            pg.draw.polygon(screen, red,
-                            ((int(self.x - self.width / 4), int(self.y + self.height / 8)),
-                             (int(self.x + self.width / 4), int(self.y + self.height / 8)),
-                             (int(self.x + self.width / 4 + speed_hor), int(self.y + self.height * 7 / 8)),
-                             (int(self.x - self.width / 4 + speed_hor), int(self.y + self.height * 7 / 8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4), self.y),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x - self.width / 2 + speed_hor),
-                                             int(self.y + self.height*7/8)),
-                                            (int(self.width/4), int(self.height/8))))
-            pg.draw.rect(screen, dark_red, ((int(self.x + self.width / 4 + speed_hor),
-                                             int(self.y + self.height*7/8)),
-                                            (int(self.width/4), int(self.height/8))))
+            body = ((body[0][0], body[0][1]),
+                    (body[1][0], body[1][1]),
+                    (body[2][0] + speed_hor, body[2][1]),
+                    (body[3][0] + speed_hor, body[3][1]))
+            wheel_rl = ((wheel_rl[0][0] + speed_hor, wheel_rl[0][1]),
+                        (wheel_rl[1][0], wheel_rl[1][1]))
+            wheel_rr = ((wheel_rr[0][0] + speed_hor, wheel_rr[0][1]),
+                        (wheel_rr[1][0], wheel_rr[1][1]))
+        pg.draw.polygon(screen, red, body)
+        pg.draw.rect(screen, dark_red, wheel_fl)
+        pg.draw.rect(screen, dark_red, wheel_fr)
+        pg.draw.rect(screen, dark_red, wheel_rl)
+        pg.draw.rect(screen, dark_red, wheel_rr)
 
 
 class Road:
@@ -196,7 +190,7 @@ class Road:
                              (int(left_rect[1][0] + random + grid*2/3), int(left_rect[0][1] + grid*6/8))))
         else:
             ornament_pos = None
-        if self.window > 5 and rock_chance > randrange(100):
+        if self.window > 6 and rock_chance > randrange(120):
             random = randrange(self.window) * grid
             rock_pos = ((int(left_rect[1][0] + random + grid*0/8), int(left_rect[0][1] + grid*8/8)),
                         (int(left_rect[1][0] + random + grid*2/8), int(left_rect[0][1] + grid*4/8)),
@@ -264,7 +258,7 @@ move_right = False
 high_score = read_high_score()
 high_score_updated = False
 start_screen = True
-music_enabled = False
+music_enabled = True
 
 while True:
     clock.tick(frame_rate)
@@ -316,7 +310,7 @@ while True:
     elif health > 0:
         med_chance = med_chance_start - level
         rock_chance = rock_chance_start + level
-        shuttle_top = road.map[6]
+        shuttle_top = road.map[4]
         shuttle_left = shuttle.x - shuttle.width/2
         shuttle_right = shuttle.x + shuttle.width/2
         left_border = shuttle_top[0][1][0]
@@ -346,7 +340,7 @@ while True:
         if health < 0:
             health = 0
         if hit or heal:
-            clock.tick(frame_rate/2)
+            clock.tick(frame_rate/2)  # add lag
 
         road.draw(hit, heal)
         shuttle.draw()
