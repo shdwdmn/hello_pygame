@@ -14,7 +14,7 @@ health_max = 100
 ornament_chance = 60
 med_chance_start = 50
 rock_chance_start = 0
-window_position = '1275, 125'
+window_position = '1275, 125'  # TODO: adapt to other screen sizes, copy to other games and template
 black = pg.Color('black')  # (0, 0, 0, 255)
 white = pg.Color('white')
 red = pg.Color('red')
@@ -99,11 +99,9 @@ def read_high_score():
 
 
 def update_high_score(new_score):
-    global high_score_updated
     save_file = open(saving_file, 'w')  # read before update to catch exception
     save_file.write(str(new_score))
     save_file.close()
-    high_score_updated = True
 
 
 class Shuttle:
@@ -356,6 +354,7 @@ while True:
         if score > high_score and not high_score_updated:
             high_score = score
             update_high_score(high_score)
+            high_score_updated = True
         draw_hud()
 
     pg.display.update()  # redraw
