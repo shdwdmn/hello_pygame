@@ -13,7 +13,7 @@ To run and play it (using system Python environment):
     2) `cd c:\extract_path\hello_pygame`
     3) `pip install -r requirements.txt`
 3. Run:
-    - python clown.py
+    - `python clown.py`
 ---
 Playable items:
 - clown.py
