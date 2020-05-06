@@ -121,7 +121,7 @@ screen.blit(text, textRect)
 pygame.display.update()
 
 while not terminated:  # wait for quit
-    pygame.time.delay(200)
+    clock.tick(10)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminated = True
