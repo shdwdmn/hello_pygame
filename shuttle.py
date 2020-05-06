@@ -14,7 +14,7 @@ health_max = 100
 ornament_chance = 60
 med_chance_start = 50
 rock_chance_start = 0
-window_position = '1275, 125'  # TODO: adapt to other screen sizes, copy to other games and template
+window_position = '1275, 125'  # TODO: adapt to different screen sizes
 black = pg.Color('black')  # (0, 0, 0, 255)
 white = pg.Color('white')
 red = pg.Color('red')
@@ -180,28 +180,29 @@ class Road:
 
         left_rect = ((0, 0), (grid * self.l_size, grid))
         right_rect = ((window_w - grid * self.r_size, 0), (grid * self.r_size, grid))
+        border = left_rect[1][0]
         if self.window * self.window * ornament_chance/100 >= randrange(100):  # ornament chance grows with \
             random = randrange(self.window) * grid                             # ornament_chance and window^2
-            ornament_pos = (((int(left_rect[1][0] + random + grid*1/8), int(left_rect[0][1] + grid*7/8)),
-                             (int(left_rect[1][0] + random + grid*7/8), int(left_rect[0][1] + grid*7/8))),
-                            ((int(left_rect[1][0] + random + grid*1/3), int(left_rect[0][1] + grid*6/8)),
-                             (int(left_rect[1][0] + random + grid*2/3), int(left_rect[0][1] + grid*6/8))))
+            ornament_pos = (((int(border + random + grid*1/8), int(grid*7/8)),
+                             (int(border + random + grid*7/8), int(grid*7/8))),
+                            ((int(border + random + grid*1/3), int(grid*6/8)),
+                             (int(border + random + grid*2/3), int(grid*6/8))))
         else:
             ornament_pos = None
         if self.window > 6 and rock_chance > randrange(120):
             random = randrange(self.window) * grid
-            rock_pos = ((int(left_rect[1][0] + random + grid*0/8), int(left_rect[0][1] + grid*8/8)),
-                        (int(left_rect[1][0] + random + grid*2/8), int(left_rect[0][1] + grid*4/8)),
-                        (int(left_rect[1][0] + random + grid*4/8), int(left_rect[0][1] + grid*5/8)),
-                        (int(left_rect[1][0] + random + grid*6/8), int(left_rect[0][1] + grid*2/8)),
-                        (int(left_rect[1][0] + random + grid*8/8), int(left_rect[0][1] + grid*8/8)))
+            rock_pos = ((int(border + random + grid*0/8), int(grid*8/8)),
+                        (int(border + random + grid*2/8), int(grid*4/8)),
+                        (int(border + random + grid*4/8), int(grid*5/8)),
+                        (int(border + random + grid*6/8), int(grid*2/8)),
+                        (int(border + random + grid*8/8), int(grid*8/8)))
         else:
             rock_pos = None
         if med_chance > randrange(1000):
             random = randrange(self.window) * grid
-            med_pos = (((left_rect[1][0] + random, int(left_rect[0][1] + grid/3)),
+            med_pos = (((border + random, int(grid/3)),
                         (grid, int(grid/3))),
-                       ((int(left_rect[1][0] + random + grid/3), left_rect[0][1]),
+                       ((int(border + random + grid/3), 0),
                         (int(grid/3), grid)))
         else:
             med_pos = None
@@ -307,7 +308,7 @@ while True:
         draw_start_screen()
     elif health > 0:
         med_chance = med_chance_start - level
-        rock_chance = rock_chance_start + level
+        rock_chance = rock_chance_start + level/2
         shuttle_top = road.map[4]
         shuttle_left = shuttle.x - shuttle.width/2
         shuttle_right = shuttle.x + shuttle.width/2
