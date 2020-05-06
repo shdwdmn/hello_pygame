@@ -1,6 +1,6 @@
 hello pygame
 ---
-This is my PyGame "Hello world" series.
+This is my PyGame "Hello world" series project.
 
 To run and play it (using system Python environment):
 1. Download and install Python: 
@@ -9,7 +9,7 @@ To run and play it (using system Python environment):
         - add Python to PATH
         - disable PATH length limit (optional)
 2. Install requirements:
-    1) extract project to hello_pygame directory
+    1) download and extract the project to hello_pygame directory
     2) `cd c:\extract_path\hello_pygame`
     3) `pip install -r requirements.txt`
 3. Run:
